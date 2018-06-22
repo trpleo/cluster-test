@@ -1,39 +1,67 @@
 package org.trp.cluster
 
-//#quick-start-server
-import scala.concurrent.Await
-import scala.concurrent.duration.Duration
-
-import akka.actor.{ ActorRef, ActorSystem }
+import akka.actor.{ ActorRef, ActorSystem, Props }
+import akka.cluster.Cluster
+import akka.event.{ Logging, LoggingAdapter }
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
 import akka.stream.ActorMaterializer
+import com.typesafe.config.ConfigFactory
 
-//#main-class
-object QuickstartServer extends App with UserRoutes {
+import scala.concurrent.duration.Duration
+import scala.concurrent.{ Await, ExecutionContext }
+import scala.util.Try
 
-  // set up ActorSystem and other dependencies here
-  //#main-class
-  //#server-bootstrapping
-  implicit val system: ActorSystem = ActorSystem("helloAkkaHttpServer")
+object QuickstartServer extends App with UserRoutes with Config {
+
+  val (hostname, port) = Try {
+    val arr = args(0).split("@")(1).split(":")
+    (arr(0), arr(1).toInt)
+  } getOrElse {
+    ("0.0.0.0", 6651)
+  }
+
+  val rawSeedNodes = s""""${System.getenv("SEEDNODES").split(",").toList.mkString("""", """")}""""
+
+  val sysConfig =
+    ConfigFactory.parseString(s"akka.remote.netty.tcp.port=${port}").
+      withFallback(ConfigFactory.parseString(s"akka.remote.netty.tcp.hostname=${hostname}")).
+      withFallback(ConfigFactory.parseString(s"akka.cluster.seed-nodes=[${rawSeedNodes}]")).
+      withFallback(ConfigFactory.load("application"))
+
+  implicit val system: ActorSystem = ActorSystem("TestSTOCluster", sysConfig)
+  implicit val executor: ExecutionContext = system.dispatcher // todo: custom dispatcher to become default dispatcher
   implicit val materializer: ActorMaterializer = ActorMaterializer()
-  //#server-bootstrapping
+  implicit override lazy val log: LoggingAdapter = Logging(system, getClass)
+
+  log.info(
+    s"""
+       |
+       |
+       | $sysConfig
+       |
+       |
+     """.stripMargin)
+
+  log.info(s"remote.netty.tcp.port=$port")
+  log.info(s"remote.netty.tcp.hostname=$hostname")
+  log.info(s"cluster.seed-nodes=[$rawSeedNodes]")
+
+  implicit val cluster = Cluster(system)
+  val selfAddress = cluster.selfAddress
+  log.info(s"cluster: [$cluster]")
+  log.info(s"state: [${cluster.state}]")
+  log.info(s"selfAddress: [$selfAddress]")
+
+  val cmm = system.actorOf(Props[ClusterMembershipManager], name = "clusterListener")
 
   val userRegistryActor: ActorRef = system.actorOf(UserRegistryActor.props, "userRegistryActor")
 
-  //#main-class
-  // from the UserRoutes trait
   lazy val routes: Route = userRoutes
-  //#main-class
 
-  //#http-server
-  Http().bindAndHandle(routes, "localhost", 8080)
+  Http().bindAndHandle(routes, httpHost, httpPort)
 
-  println(s"Server online at http://localhost:8080/")
+  log.info(s"Server online at http://$httpHost:$httpPort/")
 
   Await.result(system.whenTerminated, Duration.Inf)
-  //#http-server
-  //#main-class
 }
-//#main-class
-//#quick-start-server
