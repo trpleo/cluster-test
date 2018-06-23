@@ -37,15 +37,6 @@ object QuickstartServer extends App with UserRoutes with Config {
 
   AkkaManagement(system).start()
 
-  log.info(
-    s"""
-       |
-       |
-       | $sysConfig
-       |
-       |
-     """.stripMargin)
-
   log.info(s"remote.netty.tcp.port=$port")
   log.info(s"remote.netty.tcp.hostname=$hostname")
   log.info(s"cluster.seed-nodes=[$rawSeedNodes]")

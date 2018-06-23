@@ -1,0 +1,51 @@
+syntax = "proto3";
+
+package org.trp.cluster;
+
+import "google/protobuf/wrappers.proto";
+import "scalapb/scalapb.proto";
+
+option java_package = "org.trp.cluster";
+option java_outer_classname = "ApiMessages";
+
+message StandingOrder {
+    string id = 1;
+    int64 from = 2;
+    int64 to = 3;
+    int32 amount = 4;
+    google.protobuf.StringValue currency = 5;
+    google.protobuf.StringValue notice = 6;
+}
+
+message STO {
+    int32 id = 1;
+//    int32 id2 = 2;
+}
+
+message Employee {
+    google.protobuf.StringValue id = 1;
+    google.protobuf.StringValue name = 2;
+    google.protobuf.StringValue email = 3;
+    bool approver = 4;
+    bool active = 5;
+}
+
+message Employees {
+    repeated Employee employees = 1 [(scalapb.field).collection_type="scala.collection.immutable.List"];
+}
+
+message Error {
+    int32 code = 1;
+    string message = 2;
+    google.protobuf.StringValue employeeId = 3;
+}
+
+message EmployeeEnvilope {
+    Employee employee = 1;
+    Error error = 2;
+}
+
+message EmployeesEnvilope {
+    repeated Employee employee = 1 [(scalapb.field).collection_type="scala.collection.immutable.List"];
+    Error error = 2;
+}
