@@ -5,6 +5,7 @@ import akka.cluster.Cluster
 import akka.event.{ Logging, LoggingAdapter }
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.server.Route
+import akka.management.AkkaManagement
 import akka.stream.ActorMaterializer
 import com.typesafe.config.ConfigFactory
 
@@ -33,6 +34,8 @@ object QuickstartServer extends App with UserRoutes with Config {
   implicit val executor: ExecutionContext = system.dispatcher // todo: custom dispatcher to become default dispatcher
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit override lazy val log: LoggingAdapter = Logging(system, getClass)
+
+  AkkaManagement(system).start()
 
   log.info(
     s"""
