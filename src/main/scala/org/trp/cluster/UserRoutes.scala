@@ -17,8 +17,9 @@ import scala.concurrent.Future
 import org.trp.cluster.UserRegistryActor._
 import akka.pattern.ask
 import akka.util.Timeout
+import org.trp.cluster.v100._
 
-trait UserRoutes extends JsonSupport {
+trait UserRoutes extends ProtobufSupport {
 
   implicit def system: ActorSystem
 
@@ -34,14 +35,12 @@ trait UserRoutes extends JsonSupport {
         pathEnd {
           concat(
             get {
-              val users: Future[Users] =
-                (userRegistryActor ? GetUsers).mapTo[Users]
+              val users: Future[Users] = (userRegistryActor ? GetUsers).mapTo[Users]
               complete(users)
             },
             post {
               entity(as[User]) { user =>
-                val userCreated: Future[ActionPerformed] =
-                  (userRegistryActor ? CreateUser(user)).mapTo[ActionPerformed]
+                val userCreated: Future[ActionPerformed] = (userRegistryActor ? CreateUser(Some(user))).mapTo[ActionPerformed]
                 onSuccess(userCreated) { performed =>
                   log.info("Created user [{}]: {}", user.name, performed.description)
                   complete((StatusCodes.Created, performed))
@@ -52,8 +51,7 @@ trait UserRoutes extends JsonSupport {
         path(Segment) { name =>
           concat(
             get {
-              val maybeUser: Future[Option[User]] =
-                (userRegistryActor ? GetUser(name)).mapTo[Option[User]]
+              val maybeUser: Future[Option[User]] = (userRegistryActor ? GetUser(name)).mapTo[Option[User]]
               rejectEmptyResponse {
                 complete(maybeUser)
               }

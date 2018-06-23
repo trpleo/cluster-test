@@ -17,35 +17,58 @@ message StandingOrder {
     google.protobuf.StringValue notice = 6;
 }
 
-message STO {
-    int32 id = 1;
-//    int32 id2 = 2;
+message User {
+    string name = 1;
+    int32 age = 2;
+    string countryOfResidence = 3;
 }
 
-message Employee {
-    google.protobuf.StringValue id = 1;
-    google.protobuf.StringValue name = 2;
-    google.protobuf.StringValue email = 3;
-    bool approver = 4;
-    bool active = 5;
+message Users {
+    repeated User users = 1 [(scalapb.field).collection_type="scala.collection.Seq"];
 }
 
-message Employees {
-    repeated Employee employees = 1 [(scalapb.field).collection_type="scala.collection.immutable.List"];
+message ActionPerformed {
+    string description = 1;
 }
 
-message Error {
-    int32 code = 1;
-    string message = 2;
-    google.protobuf.StringValue employeeId = 3;
+message GetUsers {}
+
+message CreateUser {
+    User user = 1;
 }
 
-message EmployeeEnvilope {
-    Employee employee = 1;
-    Error error = 2;
+message GetUser {
+    string name = 1;
 }
 
-message EmployeesEnvilope {
-    repeated Employee employee = 1 [(scalapb.field).collection_type="scala.collection.immutable.List"];
-    Error error = 2;
+message DeleteUser {
+    string name = 1;
 }
+
+//message Employee {
+//    google.protobuf.StringValue id = 1;
+//    google.protobuf.StringValue name = 2;
+//    google.protobuf.StringValue email = 3;
+//    bool approver = 4;
+//    bool active = 5;
+//}
+//
+//message Employees {
+//    repeated Employee employees = 1 [(scalapb.field).collection_type="scala.collection.immutable.List"];
+//}
+//
+//message Error {
+//    int32 code = 1;
+//    string message = 2;
+//    google.protobuf.StringValue employeeId = 3;
+//}
+//
+//message EmployeeEnvilope {
+//    Employee employee = 1;
+//    Error error = 2;
+//}
+//
+//message EmployeesEnvilope {
+//    repeated Employee employee = 1 [(scalapb.field).collection_type="scala.collection.immutable.List"];
+//    Error error = 2;
+//}

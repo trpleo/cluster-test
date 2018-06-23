@@ -1,3 +1,4 @@
+import ProtobufUtil._
 
 lazy val akkaHttpVersion = "10.1.1"
 lazy val akkaVersion    = "2.5.13"
@@ -38,50 +39,10 @@ lazy val root = (project in file(".")).
       "org.scalatest"     %% "scalatest"            % "3.0.1"         % Test
     ),
     envVars in Test := Map(
-      "IPSHOST" -> "127.0.0.1",
-      "IPSPORT" -> "9090"
+      "SEEDNODES" -> "akka.tcp://TestSTOCluster@127.0.0.1:6651",
+      "HTTPSERVICEPORT" -> "9000",
+      "CMHTTPSERVICEPORT" -> "8500"
       ),
     scalacOptions ++= Seq("-feature", "-unchecked", "-deprecation", "evicted", "-target:jvm-1.8", "-encoding", "utf8")
   )
   .settings(scalapbSettings(".")) // since this is a lib, at this point not the project name, but the current folder must be set.
-
-/**
-  * This method sets up where are the .proto files can be found for the projects and the
-  * related params (like what would be the language to apply)
-  *
-  * Usable example is in the project:
-  *   https://github.com/scalapb/ScalaPB/tree/master/examples
-  * Documentation:
-  *   https://trueaccord.github.io/ScalaPB/sbt-settings.html
-  *
-  * @param projectFolder
-  * @param forJava
-  * @param forServer
-  * @return
-  */
-def scalapbSettings(projectFolder: String, forJava: Boolean = false, forServer: Boolean = false) = {
-
-  val f = file(s"$projectFolder/src/main/protobuf")
-
-  require(f.exists(), s"The specified folder dir is not exists! [$projectFolder]")
-  require(f.isDirectory, s"The specified path is not a folder! [$projectFolder]")
-
-  val protoSources = PB.protoSources in Compile := Seq(file(s"$projectFolder/src/main/protobuf"))
-  val pVersion = PB.protocVersion := "-v300"
-
-  val pbgen = forJava match {
-    case true =>
-      PB.targets in Compile := {
-        Seq(
-          scalapb.gen(javaConversions = true, grpc = forServer, singleLineToProtoString = true) -> (sourceManaged in Compile).value,
-          PB.gens.java("3.3.1") -> (sourceManaged in Compile).value
-        )
-      }
-    case false =>
-      PB.targets in Compile := {
-        Seq( scalapb.gen(javaConversions = false, grpc = forServer, singleLineToProtoString = true) -> (sourceManaged in Compile).value )
-      }
-  }
-
-  Seq(pVersion,protoSources).:+(pbgen)
-}

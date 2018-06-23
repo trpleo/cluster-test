@@ -9,4 +9,6 @@ trait Config {
 
   val httpHost = httpConfig.getString("interface")
   val httpPort = httpConfig.getInt("port")
+
+  val jsonEnabled = httpConfig.getBoolean("jsonEnabled")
 }
