@@ -17,34 +17,54 @@ message StandingOrder {
     google.protobuf.StringValue notice = 6;
 }
 
-message User {
-    string name = 1;
-    int32 age = 2;
-    string countryOfResidence = 3;
+message StandingOrders {
+    repeated StandingOrder stos = 1 [(scalapb.field).collection_type="scala.collection.immutable.List"];
 }
 
-message Users {
-    repeated User users = 1 [(scalapb.field).collection_type="scala.collection.Seq"];
+message GetSTO {
+    string id = 1;
 }
 
-message ActionPerformed {
-    string description = 1;
+message GetSTOs {
+    int64 txId = 1;
 }
 
-message GetUsers {}
-
-message CreateUser {
-    User user = 1;
+message WaitForSTOs {
+    int32 childrenCardinality = 1;
 }
 
-message GetUser {
-    string name = 1;
+message UpsertSTO {
+    StandingOrder sto = 1;
 }
 
-message DeleteUser {
-    string name = 1;
-}
-
+//message User {
+//    string name = 1;
+//    int32 age = 2;
+//    string countryOfResidence = 3;
+//}
+//
+//message Users {
+//    repeated User users = 1 [(scalapb.field).collection_type="scala.collection.Seq"];
+//}
+//
+//message ActionPerformed {
+//    string description = 1;
+//}
+//
+//message GetUsers {}
+//
+//message CreateUser {
+//    User user = 1;
+//}
+//
+//message GetUser {
+//    string name = 1;
+//}
+//
+//message DeleteUser {
+//    string name = 1;
+//}
+//
 //message Employee {
 //    google.protobuf.StringValue id = 1;
 //    google.protobuf.StringValue name = 2;

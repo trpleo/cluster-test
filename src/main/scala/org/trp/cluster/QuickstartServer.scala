@@ -1,6 +1,6 @@
 package org.trp.cluster
 
-import akka.actor.{ ActorRef, ActorSystem, Props }
+import akka.actor.{ ActorSystem, Props }
 import akka.cluster.Cluster
 import akka.event.{ Logging, LoggingAdapter }
 import akka.http.scaladsl.Http
@@ -13,7 +13,7 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{ Await, ExecutionContext }
 import scala.util.Try
 
-object QuickstartServer extends App with UserRoutes with Config {
+object QuickstartServer extends App with StoManRoutes with Config {
 
   val (hostname, port) = Try {
     val arr = args(0).split("@")(1).split(":")
@@ -48,8 +48,7 @@ object QuickstartServer extends App with UserRoutes with Config {
   log.info(s"selfAddress: [$selfAddress]")
 
   val cmm = system.actorOf(Props[ClusterMembershipManager], name = "clusterListener")
-
-  val userRegistryActor: ActorRef = system.actorOf(UserRegistryActor.props, "userRegistryActor")
+  val stoManager = system.actorOf(Props[STOManager], name = "stom")
 
   lazy val routes: Route = userRoutes
 
