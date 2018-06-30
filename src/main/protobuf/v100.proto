@@ -44,15 +44,6 @@ message UpsertSTO {
     StandingOrder sto = 1;
 }
 
-//{
-//"userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36",
-//"site": 123,
-//"campaign": 456,
-//"contact": 789,
-//"ip": "10.5.5.7",
-//"time": "2018-06-27 12:12:12"
-//}
-
 message OpenEvent {
     string userAgent = 1;
     int32 site = 2;
