@@ -32,6 +32,9 @@ lazy val root = (project in file(".")).
       "com.thesamet.scalapb" %% "scalapb-json4s" % "0.7.1",
       "com.thesamet.scalapb" %% "scalapb-runtime" % scalapb.compiler.Version.scalapbVersion % "protobuf",
 
+      // rabbitmq
+      "com.newmotion" %% "akka-rabbitmq" % "5.0.0",
+
       // testing
       "com.typesafe.akka" %% "akka-http-testkit"    % akkaHttpVersion % Test,
       "com.typesafe.akka" %% "akka-testkit"         % akkaVersion     % Test,

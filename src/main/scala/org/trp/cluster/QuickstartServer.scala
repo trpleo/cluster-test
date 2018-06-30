@@ -37,6 +37,8 @@ object QuickstartServer extends App with StoManRoutes with Config {
 
   AkkaManagement(system).start()
 
+  val pb = new PublishSubscribe
+
   log.info(s"remote.netty.tcp.port=$port")
   log.info(s"remote.netty.tcp.hostname=$hostname")
   log.info(s"cluster.seed-nodes=[$rawSeedNodes]")

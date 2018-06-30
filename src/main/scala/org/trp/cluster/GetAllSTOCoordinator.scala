@@ -9,14 +9,16 @@ class GetAllSTOCoordinator extends Actor with ActorLogging with Stash with Confi
 
   type Cardinality = Int
 
+  type TXID = Long
+
   object Timeout
 
   def updateWithStandingOrder(so: StandingOrder)(implicit sos: StandingOrders) = StandingOrders(sos.stos :+ so)
 
   override def receive: Receive = {
 
-    case WaitForSTOs(cardinality) =>
-      context.become(processing(sender(), cardinality)(StandingOrders()))
+    case WaitForSTOs(cardinality, tx) =>
+      context.become(processing(sender(), cardinality, tx)(StandingOrders()))
       context.system.scheduler.scheduleOnce(getStosTimeout, self, Timeout)
       unstashAll()
 
@@ -24,14 +26,14 @@ class GetAllSTOCoordinator extends Actor with ActorLogging with Stash with Confi
       stash()
   }
 
-  def processing(responseTo: ActorRef, cardinality: Cardinality)(implicit response: StandingOrders): Receive = {
+  def processing(responseTo: ActorRef, cardinality: Cardinality, tx: TXID)(implicit response: StandingOrders): Receive = {
 
     case Some(so: StandingOrder) if (cardinality == 1) =>
       responseTo ! updateWithStandingOrder(so)
       context.stop(self)
 
     case Some(so: StandingOrder) =>
-      context.become(processing(responseTo, cardinality)(updateWithStandingOrder(so)))
+      context.become(processing(responseTo, cardinality, tx)(updateWithStandingOrder(so)))
 
     case Timeout =>
       log.warning(s"Timeout happened. Still [$cardinality] message is missing.")

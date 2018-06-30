@@ -21,6 +21,12 @@ message StandingOrders {
     repeated StandingOrder stos = 1 [(scalapb.field).collection_type="scala.collection.immutable.List"];
 }
 
+message Envelope {
+    int64 txId = 1;
+//    string typeTag = 2 [(scalapb.field).type = "org.trp.cluster.EnvelopeTranslator"];
+    bytes payload = 3;
+}
+
 message GetSTO {
     string id = 1;
 }
@@ -31,64 +37,27 @@ message GetSTOs {
 
 message WaitForSTOs {
     int32 childrenCardinality = 1;
+    int64 txId = 2;
 }
 
 message UpsertSTO {
     StandingOrder sto = 1;
 }
 
-//message User {
-//    string name = 1;
-//    int32 age = 2;
-//    string countryOfResidence = 3;
+//{
+//"userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36",
+//"site": 123,
+//"campaign": 456,
+//"contact": 789,
+//"ip": "10.5.5.7",
+//"time": "2018-06-27 12:12:12"
 //}
-//
-//message Users {
-//    repeated User users = 1 [(scalapb.field).collection_type="scala.collection.Seq"];
-//}
-//
-//message ActionPerformed {
-//    string description = 1;
-//}
-//
-//message GetUsers {}
-//
-//message CreateUser {
-//    User user = 1;
-//}
-//
-//message GetUser {
-//    string name = 1;
-//}
-//
-//message DeleteUser {
-//    string name = 1;
-//}
-//
-//message Employee {
-//    google.protobuf.StringValue id = 1;
-//    google.protobuf.StringValue name = 2;
-//    google.protobuf.StringValue email = 3;
-//    bool approver = 4;
-//    bool active = 5;
-//}
-//
-//message Employees {
-//    repeated Employee employees = 1 [(scalapb.field).collection_type="scala.collection.immutable.List"];
-//}
-//
-//message Error {
-//    int32 code = 1;
-//    string message = 2;
-//    google.protobuf.StringValue employeeId = 3;
-//}
-//
-//message EmployeeEnvilope {
-//    Employee employee = 1;
-//    Error error = 2;
-//}
-//
-//message EmployeesEnvilope {
-//    repeated Employee employee = 1 [(scalapb.field).collection_type="scala.collection.immutable.List"];
-//    Error error = 2;
-//}
+
+message OpenEvent {
+    string userAgent = 1;
+    int32 site = 2;
+    int32 campaign = 3;
+    int64 contact = 4;
+    string ip = 5;
+    string time = 6;
+}
