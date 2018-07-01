@@ -16,7 +16,7 @@ import scala.concurrent.duration._
 import scala.language.postfixOps
 import scala.util.Random
 
-class PublishSubscribe(deliveryHandler: (RabbitMQEnvelope, ActorRef) => Unit, queueName: String = "userEventQueue")(implicit system: ActorSystem, log: LoggingAdapter) extends ProtobufSupport {
+final case class PublishSubscribe(queueName: String = "userEventQueue")(implicit system: ActorSystem, log: LoggingAdapter) extends ProtobufSupport {
   val baseMessage = OpenEvent(
     userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/67.0.3396.99 Safari/537.36",
     site = 123,
@@ -47,10 +47,7 @@ class PublishSubscribe(deliveryHandler: (RabbitMQEnvelope, ActorRef) => Unit, qu
         val data = RabbitMQAckData(envelope.getDeliveryTag, properties.getReplyTo, properties.getPriority)
         val env = RabbitMQEnvelope(Some(data), Some(payload))
         log.info(s"Open Event was received: [$env]")
-        // todo: be as precise with the ContactManager's name, as it is possible
-        val contactManActorPath = s"/user/${SiteManager.siteManagerName}/${Site.siteName2HandleMessage(env)}/${ContactManager.defineContactManagerName}"
-        val pm = system.actorOf(ProcessManager.props(channel, env, contactManActorPath, 1000l, FiniteDuration(1000, TimeUnit.MILLISECONDS)), s"procman-${data.deliveryTag}")
-        deliveryHandler(env, pm)
+        system.actorOf(ProcessManager.props(channel, env, 1000l, FiniteDuration(1000, TimeUnit.MILLISECONDS)), s"procman-${data.deliveryTag}")
       }
     }
     channel.basicConsume(queue, false, consumer)
@@ -71,7 +68,7 @@ class PublishSubscribe(deliveryHandler: (RabbitMQEnvelope, ActorRef) => Unit, qu
       }
       publisher ! ChannelMessage(publish, dropIfNoChannel = false)
 
-      Thread.sleep(1000)
+      Thread.sleep(10000)
       loop(n + 1)
     }
     loop(0)

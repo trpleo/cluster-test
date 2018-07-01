@@ -63,3 +63,9 @@ message RabbitMQEnvelope {
     RabbitMQAckData ack = 1;
     OpenEvent payload = 2;
 }
+
+message ProcessDone {}
+
+message NACK {
+    RabbitMQAckData ack = 1;
+}
