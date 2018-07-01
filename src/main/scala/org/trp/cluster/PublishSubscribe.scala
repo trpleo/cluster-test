@@ -14,7 +14,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 import scala.language.postfixOps
-import scala.util.Random
+import scala.util.{ Failure, Random, Success }
 
 final case class PublishSubscribe(queueName: String = "userEventQueue")(implicit system: ActorSystem, log: LoggingAdapter) extends ProtobufSupport {
   val baseMessage = OpenEvent(
@@ -26,7 +26,7 @@ final case class PublishSubscribe(queueName: String = "userEventQueue")(implicit
     time = "2018-06-27 12:12:12")
 
   val factory = new ConnectionFactory()
-  val connection = system.actorOf(ConnectionActor.props(factory, reconnectionDelay = 10 seconds), "rabbitmq")
+  val connection = system.actorOf(ConnectionActor.props(factory, reconnectionDelay = 3 seconds), "rabbitmq")
   val exchange = "amq.direct" // direct, topic, headers and fanout
 
   // todo: for testing purposes
@@ -35,6 +35,7 @@ final case class PublishSubscribe(queueName: String = "userEventQueue")(implicit
     channel.queueBind(queue, exchange, queueName)
   }
   connection ! CreateChannel(ChannelActor.props(setupPublisher), Some("publisher"))
+  log.debug(s"Create channel for publisher...")
 
   def setupSubscriber(channel: Channel, self: ActorRef) {
     val queue = channel.queueDeclare(queueName, true, false, false, null).getQueue
@@ -47,12 +48,13 @@ final case class PublishSubscribe(queueName: String = "userEventQueue")(implicit
         val data = RabbitMQAckData(envelope.getDeliveryTag, properties.getReplyTo, properties.getPriority)
         val env = RabbitMQEnvelope(Some(data), Some(payload))
         log.info(s"Open Event was received: [$env]")
-        system.actorOf(ProcessManager.props(channel, env, 1000l, FiniteDuration(1000, TimeUnit.MILLISECONDS)), s"procman-${data.deliveryTag}")
+        system.actorOf(ProcessManager.props(channel, env, 1000 millis, 1000 millis), s"procman-${data.deliveryTag}")
       }
     }
     channel.basicConsume(queue, false, consumer)
   }
   connection ! CreateChannel(ChannelActor.props(setupSubscriber), Some("subscriber"))
+  log.debug(s"Create channel for subscriber...")
 
   // todo: for testing purposes
   def rndInRange(start: Int, end: Int) = start + Random.nextInt((end - start) + 1)
@@ -63,14 +65,17 @@ final case class PublishSubscribe(queueName: String = "userEventQueue")(implicit
     def loop(n: Long) {
       val publisher = system.actorSelection("/user/rabbitmq/publisher")
       def publish(channel: Channel) = {
-        val bm = baseMessage.copy(site = rndInRange(1, 25), campaign = rndInRange(1, 100), contact = rndInRange(1, 10000000).toLong)
+        val bm = baseMessage.copy(site = rndInRange(1, 10), campaign = rndInRange(1, 15), contact = rndInRange(1, 10000000).toLong)
         channel.basicPublish(exchange, queueName, null, JsonFormat.toJsonString(bm).getBytes)
       }
       publisher ! ChannelMessage(publish, dropIfNoChannel = false)
 
-      Thread.sleep(10000)
+      Thread.sleep(30)
       loop(n + 1)
     }
     loop(0)
+  } onComplete {
+    case Success(r) => log.info(s"Tailrec RabbitMQ PubSub finished successfully.")
+    case Failure(t) => log.error(s"Tailrec RabbitMQ PubSub thrown an error. [{}]", t.getMessage)
   }
 }

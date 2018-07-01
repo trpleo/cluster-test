@@ -9,8 +9,7 @@ import akka.http.scaladsl.server.Route
 import akka.management.AkkaManagement
 import akka.stream.ActorMaterializer
 import com.typesafe.config.ConfigFactory
-import org.trp.cluster.ProcessManager.NACK
-import org.trp.cluster.v100.RabbitMQEnvelope
+import org.trp.cluster.v100._
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ Await, ExecutionContext }
@@ -59,12 +58,18 @@ object QuickstartServer extends App with ReadSideEndpointsRoutes with Config {
 
   val extractEntityIdForCampaign: ShardRegion.ExtractEntityId = {
     case cmd: RabbitMQEnvelope => (defineEntityIdForCampaign(cmd), cmd)
-    case cmd @ NACK(env) => (defineEntityIdForContact(env), cmd)
+    case cmd @ NACK(env) => (defineEntityIdForContact(env.get), cmd)
+    case cmd @ GetOpenCnt(site, campaign) => (s"${Site.siteNamePrefix}$site-${Campaign.campaignNamePrefix}$campaign", cmd)
+    case cmd @ GetUniqueOpenCnt(site, campaign) => (s"${Site.siteNamePrefix}$site-${Campaign.campaignNamePrefix}$campaign", cmd)
+    case cmd @ GetCampaignContacts(site, campaign) => (s"${Site.siteNamePrefix}$site-${Campaign.campaignNamePrefix}$campaign", cmd)
   }
 
   val extractShardIdForCampaign: ShardRegion.ExtractShardId = {
     case cmd: RabbitMQEnvelope => (cmd.payload.get.campaign % numberOfShards).toString // defineEntityIdForCampaign (cmd)
-    case NACK(env) => (env.payload.get.campaign % numberOfShards).toString // defineEntityIdForContact(env)
+    case NACK(env) => (env.get.payload.get.campaign % numberOfShards).toString // defineEntityIdForContact(env)
+    case GetOpenCnt(_, campaign) => (campaign % numberOfShards).toString
+    case GetUniqueOpenCnt(_, campaign) => (campaign % numberOfShards).toString
+    case GetCampaignContacts(_, campaign) => (campaign % numberOfShards).toString
     case ShardRegion.StartEntity(id) => id.toString
   }
 
@@ -88,12 +93,12 @@ object QuickstartServer extends App with ReadSideEndpointsRoutes with Config {
 
   val extractEntityIdForContact: ShardRegion.ExtractEntityId = {
     case cmd: RabbitMQEnvelope => (defineEntityIdForContact(cmd), cmd)
-    case cmd @ NACK(env) => (defineEntityIdForContact(env), cmd)
+    case cmd @ NACK(env) => (defineEntityIdForContact(env.get), cmd)
   }
 
   val extractShardIdForContact: ShardRegion.ExtractShardId = {
     case cmd: RabbitMQEnvelope => (cmd.payload.get.campaign % numberOfShards).toString // defineEntityIdForContact(cmd)
-    case NACK(env) => (env.payload.get.campaign % numberOfShards).toString // defineEntityIdForContact(env)
+    case NACK(env) => (env.get.payload.get.campaign % numberOfShards).toString // defineEntityIdForContact(env)
     case ShardRegion.StartEntity(id) => id.toString
   }
 

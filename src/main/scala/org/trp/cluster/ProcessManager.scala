@@ -7,12 +7,12 @@ import akka.cluster.sharding.ClusterSharding
 import akka.util.Timeout
 import com.newmotion.akka.rabbitmq.Channel
 import org.trp.cluster.ProcessManager._
-import org.trp.cluster.v100.RabbitMQEnvelope
+import org.trp.cluster.v100.{ NACK, ProcessDone, RabbitMQEnvelope, StartProcessing }
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.FiniteDuration // todo create a proper dispatcher
+import scala.concurrent.duration._ // todo create a proper dispatcher
 
-class ProcessManager(channel: Channel, message: RabbitMQEnvelope, txTimeout: Long = 1000l)(implicit actorSelectionTimeout: Timeout) extends Actor with ActorLogging with Stash {
+class ProcessManager(channel: Channel, message: RabbitMQEnvelope, txTimeout: FiniteDuration = 1000 millis)(implicit actorSelectionTimeout: Timeout) extends Actor with ActorLogging with Stash {
 
   val EXPECTED_PROCESS_DONE_MESSAGES_CNT = 2
 
@@ -37,7 +37,7 @@ class ProcessManager(channel: Channel, message: RabbitMQEnvelope, txTimeout: Lon
       // ready, even if this is unlikely.
       s0.contactsRegion ! message
       s0.campaignsRegion ! message
-      val cancellable = context.system.scheduler.scheduleOnce(FiniteDuration(txTimeout, TimeUnit.MILLISECONDS), self, Timeout)
+      val cancellable = context.system.scheduler.scheduleOnce(txTimeout, self, Timeout)
       context.become(processing(s0.copy(cancellable = Some(cancellable))))
 
     case ProcessDone if (s0.doneMessageCnt + 1 == EXPECTED_PROCESS_DONE_MESSAGES_CNT) =>
@@ -55,8 +55,8 @@ class ProcessManager(channel: Channel, message: RabbitMQEnvelope, txTimeout: Lon
     case Timeout =>
       log.error(s"Unfortunately did not finished the action in timeout [{}]", txTimeout)
       channel.basicNack(message.ack.get.deliveryTag, false, true)
-      s0.contactsRegion ! NACK(message)
-      s0.campaignsRegion ! NACK(message)
+      s0.contactsRegion ! NACK(Some(message))
+      s0.campaignsRegion ! NACK(Some(message))
       context.stop(self)
 
     // todo: if contacts / campaigns region can be restarted, or not, while this actor survives...
@@ -90,11 +90,8 @@ class ProcessManager(channel: Channel, message: RabbitMQEnvelope, txTimeout: Lon
 object ProcessManager {
   final case class ProcessingState(contactsRegion: ActorRef, campaignsRegion: ActorRef, doneMessageCnt: Int, cancellable: Option[Cancellable])
   final case class UnknownCMState(doneMessageCnt: Int, cancellable: Option[Cancellable], retryCnt: Int = 0)
-  final case class NACK(message: RabbitMQEnvelope)
-  object ProcessDone
-  object StartProcessing
 
-  def props(channel: Channel, message: RabbitMQEnvelope, txTimeout: Long, actorSelectionTimeout: Timeout) = Props(classOf[ProcessManager], channel, message, txTimeout, actorSelectionTimeout)
+  def props(channel: Channel, message: RabbitMQEnvelope, txTimeout: FiniteDuration, actorSelectionTimeout: Timeout) = Props(classOf[ProcessManager], channel, message, txTimeout, actorSelectionTimeout)
 }
 
 class ContactManagerMissingException(actorSelectionTimeout: Timeout) extends RuntimeException {

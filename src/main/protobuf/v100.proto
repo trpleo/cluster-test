@@ -64,8 +64,38 @@ message RabbitMQEnvelope {
     OpenEvent payload = 2;
 }
 
+message StartProcessing {}
+
 message ProcessDone {}
 
 message NACK {
-    RabbitMQAckData ack = 1;
+    RabbitMQEnvelope ack = 1;
+}
+
+message IfCampaignWasOpen {
+    int32 siteId = 1;
+    int32 campaignId = 2;
+}
+
+message OpenedCampaignsByContact {
+    repeated OpenEvent results = 1 [(scalapb.field).collection_type="scala.collection.immutable.List"];
+}
+
+message GetOpenCnt {
+    int32 siteId = 1;
+    int32 campaignId = 2;
+}
+
+message GetUniqueOpenCnt {
+    int32 siteId = 1;
+    int32 campaignId = 2;
+}
+
+message GetCampaignContacts {
+    int32 siteId = 1;
+    int32 campaignId = 2;
+}
+
+message CampaignsContacts {
+    repeated OpenEvent results = 1 [(scalapb.field).collection_type="scala.collection.immutable.List"];
 }
