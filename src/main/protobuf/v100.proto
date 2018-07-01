@@ -52,3 +52,14 @@ message OpenEvent {
     string ip = 5;
     string time = 6;
 }
+
+message RabbitMQAckData {
+    int64 deliveryTag = 1;
+    string getReplyTo = 2;
+    int32 priority = 3;
+}
+
+message RabbitMQEnvelope {
+    RabbitMQAckData ack = 1;
+    OpenEvent payload = 2;
+}

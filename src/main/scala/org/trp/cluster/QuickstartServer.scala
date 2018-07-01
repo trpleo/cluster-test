@@ -1,6 +1,6 @@
 package org.trp.cluster
 
-import akka.actor.{ ActorSystem, Props }
+import akka.actor.{ ActorRef, ActorSystem, Props }
 import akka.cluster.Cluster
 import akka.event.{ Logging, LoggingAdapter }
 import akka.http.scaladsl.Http
@@ -8,6 +8,7 @@ import akka.http.scaladsl.server.Route
 import akka.management.AkkaManagement
 import akka.stream.ActorMaterializer
 import com.typesafe.config.ConfigFactory
+import org.trp.cluster.v100.RabbitMQEnvelope
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ Await, ExecutionContext }
@@ -37,8 +38,6 @@ object QuickstartServer extends App with StoManRoutes with Config {
 
   AkkaManagement(system).start()
 
-  val pb = new PublishSubscribe({ o => log.info(s"received: [$o]") })
-
   log.info(s"remote.netty.tcp.port=$port")
   log.info(s"remote.netty.tcp.hostname=$hostname")
   log.info(s"cluster.seed-nodes=[$rawSeedNodes]")
@@ -51,6 +50,11 @@ object QuickstartServer extends App with StoManRoutes with Config {
 
   val cmm = system.actorOf(Props[ClusterMembershipManager], name = "clusterListener")
   val stoManager = system.actorOf(Props[STOManager], name = "stom")
+  val sm = system.actorOf(Props[SiteManager], SiteManager.siteManagerName)
+
+  // forward the incoming OpenEvent message to the SiteManager, in order to
+  // further processing.
+  val pb = new PublishSubscribe(sm.tell)
 
   lazy val routes: Route = userRoutes
 
