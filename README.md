@@ -7,3 +7,9 @@
     * ./scripts/node-1.sh
     * ./scripts/node-2.sh
     * ./scripts/node-3.sh
+
+To get info about the cluster:
+curl -X GET localhost:8500/cluster/members/
+
+For further info, see:
+https://developer.lightbend.com/docs/akka-management/current/cluster-http-management.html
